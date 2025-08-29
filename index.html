@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MaceMC • Premium Minecraft Network</title>
+  <meta name="description" content="MaceMC — Premium Minecraft Experience. A futuristic, animated website with a live server status checker, in-page store, and ranks."/>
+  <meta name="theme-color" content="#7A33FF" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <style>
+    :root {
+      --bg-start: #0b0217;
+      --bg-end: #1c0f2e;
+      --accent-1: #a855f7;
+      --accent-2: #8b5cf6;
+      --accent-3: #d946ef;
+      --text: #e9e7ff;
+      --muted: #c9c5e9;
+      --glass: rgba(255, 255, 255, 0.07);
+      --glass-strong: rgba(255, 255, 255, 0.12);
+      --blur: 14px;
+      --card-radius: 18px;
+      --ring: 0 0 0 1px rgba(168, 85, 247, 0.45), 0 0 28px rgba(168, 85, 247, 0.25), inset 0 0 24px rgba(168, 85, 247, 0.15);
+      --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.45);
+      --shadow-md: 0 12px 24px rgba(0, 0, 0, 0.35);
+      --link: #c084fc;
+      --success: #34d399;
+      --danger: #fb7185;
+      --warning: #f59e0b;
+    }
+
+    .theme-darker {
+        --bg-start: #070012;
+        --bg-end: #1a0030;
+    }
+
+    html, body {
+      scroll-behavior: smooth;
+      background-color: var(--bg-start);
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+      color: var(--text);
+      background: linear-gradient(140deg, var(--bg-start), var(--bg-end));
+      overflow-x: hidden;
+    }
+
+    #bg-canvas, #shooting-stars-canvas {
+      position: fixed; inset: 0; z-index: -2;
+    }
+    #shooting-stars-canvas { z-index: -1; }
+    
+    .grid-lines {
+        position: fixed; inset: 0; z-index: -3;
+        background-image: linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px);
+        background-size: 60px 60px;
+        animation: pan-grid 45s linear infinite;
+        opacity: 0.5;
+        mask-image: radial-gradient(ellipse 100% 50% at 50% 0%, black 40%, transparent 100%);
+    }
+
+    @keyframes pan-grid { from { background-position: 0 0; } to { background-position: 60px 60px; } }
+
+    .orb {
+      position: fixed; border-radius: 50%; filter: blur(50px) saturate(130%);
+      opacity: 0.2; z-index: -1; mix-blend-mode: screen; pointer-events: none;
+      animation: float 20s ease-in-out infinite;
+    }
+    .orb.one { width: 450px; height: 450px; left: -150px; top: 15vh; background-color: var(--accent-2); }
+    .orb.two { width: 500px; height: 500px; right: -180px; top: 55vh; background-color: var(--accent-3); animation-duration: 26s; }
+
+    @keyframes float { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-40px) scale(1.05); } }
+    
+    .card {
+        background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: var(--card-radius);
+        backdrop-filter: blur(var(--blur));
+        padding: 22px;
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        overflow: hidden;
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 0 0 1px rgba(168,85,247,.5), 0 16px 50px rgba(168,85,247,.3), inset 0 0 30px rgba(168,85,247,.15);
+    }
+    .card::before {
+        content: ""; position: absolute; inset: 0;
+        background: radial-gradient(600px 200px at var(--mx,50%) -20%, rgba(168,85,247,.12), transparent 40%);
+        opacity: 0; transition: opacity .3s ease; pointer-events: none;
+    }
+    .card:hover::before { opacity: 1; }
+
+    .badge-live {
+        display:inline-flex; align-items:center; gap:.45rem; padding:.35rem .65rem; border-radius:999px;
+        background: rgba(12, 250, 100, .12); color:#7CFFA8; border:1px solid rgba(12, 250, 100, .25);
+    }
+    .badge-off {
+        display:inline-flex; align-items:center; gap:.45rem; padding:.35rem .65rem; border-radius:999px;
+        background: rgba(255, 0, 55, .12); color:#FF9DB0; border:1px solid rgba(255, 0, 55, .3);
+    }
+    
+    @keyframes breathing-glow {
+        0%, 100% { box-shadow: var(--ring); }
+        50% { box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.6), 0 0 40px rgba(168, 85, 247, 0.4), inset 0 0 30px rgba(168, 85, 247, 0.2); }
+    }
+  </style>
+</head>
+<body class="text-base">
+  <div class="grid-lines"></div>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+  <canvas id="shooting-stars-canvas" aria-hidden="true"></canvas>
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+
+  <header class="sticky top-0 z-50 border-b border-white/10 bg-black/30" style="backdrop-filter: blur(10px);">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+      <a href="#home" class="flex items-center gap-3">
+        <img src="https://images-ext-1.discordapp.net/external/vQEfa3uapN3M7_Gol8SagUIQnDmWTJiM1_Tg0B1uAk4/%3Fsize%3D2048/https://cdn.discordapp.com/icons/1379833324981190666/c118e3e222c91f08ddad251acdc776bc.webp" alt="MaceMC logo" class="h-10 w-10 rounded-xl" style="box-shadow: var(--ring);" />
+        <span class="font-bold text-lg tracking-wider">MaceMC</span>
+      </a>
+      <nav class="hidden md:flex items-center gap-2 text-sm font-semibold">
+        <a href="#home" class="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Home</a>
+        <a href="#features" class="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Features</a>
+        <a href="#ranks" class="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Ranks</a>
+        <a href="#store" class="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Store</a>
+        <a href="#discord" class="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Discord</a>
+      </nav>
+      <div class="flex items-center gap-2">
+        <button id="themeToggle" class="p-2 rounded-lg hover:bg-white/10 transition-colors" aria-label="Toggle Theme"><i class="ti ti-moon"></i></button>
+        <a href="https://dsc.gg/mace-mc" target="_blank" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white font-bold transition-transform hover:scale-105" style="background: linear-gradient(135deg, var(--accent-2), var(--accent-3));">
+          <i class="ti ti-brand-discord"></i> Discord
+        </a>
+        <button id="hamburger" class="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"><i class="ti ti-menu-2"></i></button>
+      </div>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden flex-col gap-2 p-4 border-t border-white/10">
+        <a href="#home" class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Home</a>
+        <a href="#features" class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Features</a>
+        <a href="#ranks" class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Ranks</a>
+        <a href="#store" class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Store</a>
+        <a href="#discord" class="block px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Discord</a>
+        <a href="https://dsc.gg/mace-mc" target="_blank" class="mt-2 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white font-bold transition-transform hover:scale-105" style="background: linear-gradient(135deg, var(--accent-2), var(--accent-3));">
+          <i class="ti ti-brand-discord"></i> Join Discord
+        </a>
+    </div>
+  </header>
+
+  <main id="home" class="relative py-20 md:py-32 text-center overflow-hidden">
+    <div class="container mx-auto px-4 relative">
+      <img class="mx-auto h-28 w-28 rounded-3xl mb-6" 
+           src="https://images-ext-1.discordapp.net/external/vQEfa3uapN3M7_Gol8SagUIQnDmWTJiM1_Tg0B1uAk4/%3Fsize%3D2048/https/cdn.discordapp.com/icons/1379833324981190666/c118e3e222c91f08ddad251acdc776bc.webp" 
+           alt="MaceMC Logo" 
+           style="animation: breathing-glow 5s ease-in-out infinite;"
+           onerror="this.onerror=null; this.src='https://placehold.co/112x112/1c0f2e/e9e7ff?text=MaceMC';"/>
+      <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight" style="text-shadow: 0 6px 30px rgba(168,85,247,0.25);">Welcome to MaceMC</h1>
+      <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-300">A premium Minecraft experience with smooth PvP, custom crates, a balanced economy, and thrilling seasonal events. Built for performance, fairness, and fun.</p>
+      
+      <div class="mt-8 p-4 card max-w-md mx-auto">
+        <div class="flex items-center justify-between">
+            <code id="serverIP" class="text-lg font-mono text-left break-all">play.blockhost.site:25566</code>
+            <button id="copyIP" class="px-3 py-1.5 rounded-lg text-sm font-semibold flex-shrink-0 ml-2" style="background: var(--glass-strong);"><i class="ti ti-clipboard mr-1"></i> Copy</button>
+        </div>
+        <div class="my-4 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent"></div>
+        <div class="grid grid-cols-2 gap-3 text-sm text-left">
+            <div class="flex items-center gap-2"><span class="opacity-70">Status:</span><span id="statusBadge" class="badge-off"><span class="inline-block size-2 rounded-full bg-red-500"></span> Offline</span></div>
+            <div class="flex items-center gap-2"><span class="opacity-70">Players:</span><strong id="players">—</strong></div>
+            <div class="flex items-center gap-2 col-span-2"><span class="opacity-70">Version:</span><strong id="version">—</strong></div>
+        </div>
+        <button id="refreshStatus" class="mt-4 w-full py-2 rounded-lg text-sm font-semibold hover:bg-white/10 transition-colors border border-white/10"><i class="ti ti-refresh mr-1"></i> Refresh Status</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="space-y-20 md:space-y-28 py-20 md:py-28">
+    <section id="features" class="container mx-auto px-4">
+        <h2 class="text-3xl md:text-4xl font-bold text-center">Features</h2>
+        <p class="text-center mt-2 max-w-xl mx-auto text-gray-400">A polished network experience with competitive PvP and friendly progression.</p>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+            <div class="card"><div class="text-2xl mb-3"><i class="ti ti-shield-heart text-purple-400"></i></div><h3 class="font-bold text-lg">Lifesteal</h3><p class="text-gray-400 text-sm mt-1">High-stakes gameplay with heart-steal mechanics and anti-combat-log protection.</p></div>
+            <div class="card"><div class="text-2xl mb-3"><i class="ti ti-box text-purple-400"></i></div><h3 class="font-bold text-lg">Custom Crates</h3><p class="text-gray-400 text-sm mt-1">Spin-to-win animations, fair odds, and unique cosmetics you can actually show off.</p></div>
+            <div class="card"><div class="text-2xl mb-3"><i class="ti ti-rocket text-purple-400"></i></div><h3 class="font-bold text-lg">Optimized Performance</h3><p class="text-gray-400 text-sm mt-1">Low-latency combat, tuned ticks, and anti-cheat that stays out of your way.</p></div>
+            <div class="card"><div class="text-2xl mb-3"><i class="ti ti-scale text-purple-400"></i></div><h3 class="font-bold text-lg">Balanced Economy</h3><p class="text-gray-400 text-sm mt-1">Smart pricing, fair grinds, and useful sinks to keep markets stable.</p></div>
+            <div class="card"><div class="text-2xl mb-3"><i class="ti ti-swords text-purple-400"></i></div><h3 class="font-bold text-lg">Competitive PvP</h3><p class="text-gray-400 text-sm mt-1">Fluid hit detection, action-bar stats, and arenas that reward skill.</p></div>
+            <div class="card"><div class="text-2xl mb-3"><i class="ti ti-calendar-event text-purple-400"></i></div><h3 class="font-bold text-lg">Weekly Events</h3><p class="text-gray-400 text-sm mt-1">Tournaments, drops, and bonus weekends to keep things fresh.</p></div>
+        </div>
+    </section>
+
+    <section id="ranks" class="container mx-auto px-4">
+        <h2 class="text-3xl md:text-4xl font-bold text-center">Ranks</h2>
+        <p class="text-center mt-2 max-w-xl mx-auto text-gray-400">Unlock perks as you climb. Ascending order: Vip → Mvp → Elite → Immortal → Mace+.</p>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 mt-12">
+            <div class="card flex flex-col"><span class="font-bold text-purple-300">Vip</span><div class="text-2xl font-bold my-2">$4.99</div><ul class="text-sm text-gray-400 space-y-1.5 flex-grow"><li>• Name color selector</li><li>• /hat, /craft, /enderchest</li><li>• 1 Home slot</li><li>• 5% Shop discount</li></ul><button class="add-to-cart mt-4 w-full py-2 rounded-lg font-semibold bg-purple-600/50 hover:bg-purple-600/80 transition-colors" data-sku="rank-vip" data-name="Vip Rank" data-price="4.99">Purchase</button></div>
+            <div class="card flex flex-col"><span class="font-bold text-purple-300">Mvp</span><div class="text-2xl font-bold my-2">$9.99</div><ul class="text-sm text-gray-400 space-y-1.5 flex-grow"><li>• All Vip perks</li><li>• 2 Home slots</li><li>• Queue priority</li><li>• /anvil, /feed</li><li>• 10% Shop discount</li></ul><button class="add-to-cart mt-4 w-full py-2 rounded-lg font-semibold bg-purple-600/50 hover:bg-purple-600/80 transition-colors" data-sku="rank-mvp" data-name="Mvp Rank" data-price="9.99">Purchase</button></div>
+            <div class="card flex flex-col"><span class="font-bold text-purple-300">Elite</span><div class="text-2xl font-bold my-2">$19.99</div><ul class="text-sm text-gray-400 space-y-1.5 flex-grow"><li>• All Mvp perks</li><li>• 3 Home slots</li><li>• Bonus crate key weekly</li><li>• /nick</li><li>• 15% Shop discount</li></ul><button class="add-to-cart mt-4 w-full py-2 rounded-lg font-semibold bg-purple-600/50 hover:bg-purple-600/80 transition-colors" data-sku="rank-elite" data-name="Elite Rank" data-price="19.99">Purchase</button></div>
+            <div class="card flex flex-col"><span class="font-bold text-purple-300">Immortal</span><div class="text-2xl font-bold my-2">$29.99</div><ul class="text-sm text-gray-400 space-y-1.5 flex-grow"><li>• All Elite perks</li><li>• 5 Home slots</li><li>• /fly</li><li>• Pets access</li><li>• 20% Shop discount</li></ul><button class="add-to-cart mt-4 w-full py-2 rounded-lg font-semibold bg-purple-600/50 hover:bg-purple-600/80 transition-colors" data-sku="rank-immortal" data-name="Immortal Rank" data-price="29.99">Purchase</button></div>
+            <div class="card flex flex-col ring-2 ring-pink-500 relative"><div class="absolute -top-3 right-4 text-xs font-bold bg-pink-500 text-white px-2 py-0.5 rounded-full">BEST VALUE</div><span class="font-bold text-pink-400">Mace+</span><div class="text-2xl font-bold my-2">$49.99</div><ul class="text-sm text-gray-400 space-y-1.5 flex-grow"><li>• All Immortal perks</li><li>• 8 Home slots</li><li>• 2x Crate key weekly</li><li>• /fix all, /workbench</li><li>• 25% Shop discount</li></ul><button class="add-to-cart mt-4 w-full py-2 rounded-lg font-semibold text-white transition-transform hover:scale-105" style="background: linear-gradient(135deg, var(--accent-2), var(--accent-3));" data-sku="rank-maceplus" data-name="Mace+ Rank" data-price="49.99">Purchase</button></div>
+        </div>
+    </section>
+
+    <section id="store" class="container mx-auto px-4">
+        <h2 class="text-3xl md:text-4xl font-bold text-center">Store</h2>
+        <p class="text-center mt-2 max-w-xl mx-auto text-gray-400">Fully front-end demo cart — add items, apply coupons, and proceed to checkout.</p>
+        <div class="flex justify-center gap-2 mt-8" role="tablist">
+            <button class="tab active px-4 py-2 rounded-lg font-semibold" data-cat="ranks">Ranks</button>
+            <button class="tab px-4 py-2 rounded-lg font-semibold" data-cat="keys">Crate Keys</button>
+            <button class="tab px-4 py-2 rounded-lg font-semibold" data-cat="bundles">Bundles</button>
+        </div>
+        <div id="products" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8"></div>
+    </section>
+
+    <section id="discord" class="container mx-auto px-4">
+        <div class="card md:flex items-center justify-between gap-8 text-center md:text-left">
+            <div>
+                <h2 class="text-2xl md:text-3xl font-bold">Join Our Discord</h2>
+                <p class="mt-2 text-gray-400">News, giveaways, and support — be part of the MaceMC community.</p>
+            </div>
+            <a href="https://dsc.gg/mace-mc" target="_blank" class="mt-6 md:mt-0 flex-shrink-0 inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-white font-bold transition-transform hover:scale-105" style="background: linear-gradient(135deg, var(--accent-2), var(--accent-3));">
+              <i class="ti ti-brand-discord"></i> Join Discord
+            </a>
+        </div>
+    </section>
+  </div>
+
+  <footer class="border-t border-white/10 py-8">
+    <div class="container mx-auto px-4 text-center text-sm text-gray-400">
+      <p>© <span id="year"></span> MaceMC • All rights reserved.</p>
+      <div class="mt-2 flex justify-center gap-4">
+        <a href="#terms" class="hover:text-white">Terms</a>
+        <a href="#privacy" class="hover:text-white">Privacy</a>
+        <a href="mailto:support@macemc.xyz" class="hover:text-white">Support</a>
+      </div>
+    </div>
+  </footer>
+  
+  <div class="fixed right-5 bottom-5 z-40">
+    <button id="openCart" class="relative w-14 h-14 rounded-full text-white grid place-items-center shadow-lg transition-transform hover:scale-110" style="background: linear-gradient(135deg, var(--accent-2), var(--accent-3)); box-shadow: var(--shadow-lg);" aria-label="Open cart">
+      <i class="ti ti-shopping-cart text-2xl"></i>
+      <span id="cartCount" class="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs font-bold w-6 h-6 rounded-full grid place-items-center">0</span>
+    </button>
+  </div>
+
+  <div id="cartModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="w-full max-w-2xl rounded-2xl p-6" style="background: var(--bg-end); border: 1px solid rgba(255,255,255,0.12);">
+      <header class="flex items-center justify-between pb-4 border-b border-white/10">
+        <h3 class="font-bold text-xl">Your Cart</h3>
+        <button id="closeCart" class="p-2 rounded-lg hover:bg-white/10" aria-label="Close cart"><i class="ti ti-x"></i></button>
+      </header>
+      <div id="cartItems" class="my-4 max-h-64 overflow-y-auto space-y-3 pr-2"></div>
+      <div class="pt-4 border-t border-white/10">
+        <div class="flex gap-2">
+            <input id="coupon" placeholder="Coupon (e.g., MACE10)" class="flex-grow bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm">
+            <button id="applyCoupon" class="px-4 py-2 rounded-lg font-semibold bg-purple-600/50 hover:bg-purple-600/80 transition-colors text-sm">Apply</button>
+        </div>
+        <div id="totals" class="mt-4 space-y-1 text-sm"></div>
+        <div class="mt-6 flex flex-wrap gap-2">
+            <button class="px-5 py-2.5 rounded-lg font-bold text-white transition-transform hover:scale-105" style="background: linear-gradient(135deg, var(--accent-2), var(--accent-3));">Proceed to Checkout</button>
+            <button id="clearCart" class="px-4 py-2 rounded-lg font-semibold bg-white/10 hover:bg-white/20 transition-colors text-sm">Clear Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-xl text-white border border-white/10 shadow-lg text-sm" style="background: var(--bg-end); backdrop-filter: blur(8px); display: none;"></div>
+
+  <script>
+    const $ = (sel, parent = document) => parent.querySelector(sel);
+    const $$ = (sel, parent = document) => Array.from(parent.querySelectorAll(sel));
+    const SERVER_IP = 'play.blockhost.site:25566';
+
+    // --- INTERACTIVE PARTICLE CONSTELLATION ---
+    (function particles() {
+        const canvas = document.getElementById('bg-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let w, h, dpr, particles, mouse;
+
+        function resize() {
+            dpr = window.devicePixelRatio || 1;
+            w = canvas.width = window.innerWidth * dpr;
+            h = canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            mouse = { x: w / 2, y: h / 2, radius: 120 * dpr };
+            createParticles();
+        }
+
+        function createParticles() {
+            particles = [];
+            const particleCount = 80;
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * w, y: Math.random() * h,
+                    vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+                    radius: (Math.random() * 1.5 + 0.5) * dpr
+                });
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, w, h);
+            
+            particles.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0 || p.x > w) p.vx *= -1;
+                if (p.y < 0 || p.y > h) p.vy *= -1;
+
+                let dx = mouse.x - p.x;
+                let dy = mouse.y - p.y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < mouse.radius) {
+                    let force = (mouse.radius - dist) / mouse.radius;
+                    p.x -= dx * force * 0.05;
+                    p.y -= dy * force * 0.05;
+                }
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(233, 231, 255, 0.7)';
+                ctx.fill();
+            });
+
+            ctx.strokeStyle = 'rgba(168, 85, 247, 0.2)';
+            ctx.lineWidth = 0.5 * dpr;
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p1 = particles[i];
+                    let p2 = particles[j];
+                    let dist = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+                    if (dist < 100 * dpr) {
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        window.addEventListener('mousemove', e => {
+            if (mouse) {
+                mouse.x = e.clientX * dpr;
+                mouse.y = e.clientY * dpr;
+            }
+        });
+        resize();
+        animate();
+    })();
+    
+    // --- SHOOTING STARS ANIMATION ---
+    (function shootingStars() {
+        const canvas = document.getElementById('shooting-stars-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let w, h, dpr, stars;
+
+        function resize() {
+            dpr = window.devicePixelRatio || 1;
+            w = canvas.width = window.innerWidth * dpr;
+            h = canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            stars = [];
+            for(let i = 0; i < 20; i++) {
+                stars.push(new Star());
+            }
+        }
+
+        class Star {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * w;
+                this.y = Math.random() * -100 * dpr;
+                this.len = (Math.random() * 80 + 10) * dpr;
+                this.speed = Math.random() * 6 + 2;
+                this.angle = Math.PI / 4; // 45 degrees
+                this.opacity = Math.random() * 0.5 + 0.2;
+            }
+            draw() {
+                ctx.beginPath();
+                const grad = ctx.createLinearGradient(this.x, this.y, this.x + this.len * Math.cos(this.angle), this.y + this.len * Math.sin(this.angle));
+                grad.addColorStop(0, `rgba(255, 255, 255, ${this.opacity})`);
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2 * dpr;
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + this.len * Math.cos(this.angle), this.y + this.len * Math.sin(this.angle));
+                ctx.stroke();
+            }
+            update() {
+                this.x += this.speed * Math.cos(this.angle);
+                this.y += this.speed * Math.sin(this.angle);
+                if (this.y > h + 50 * dpr) {
+                    this.reset();
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, w, h);
+            stars.forEach(star => {
+                star.update();
+                star.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+    })();
+
+
+    // --- UI INTERACTIONS ---
+    document.addEventListener('DOMContentLoaded', () => {
+      $('#hamburger').addEventListener('click', () => $('#mobileMenu').classList.toggle('hidden'));
+      $$('#mobileMenu a').forEach(a => a.addEventListener('click', () => $('#mobileMenu').classList.add('hidden')));
+      $('#themeToggle').addEventListener('click', () => document.body.classList.toggle('theme-darker'));
+      $('#copyIP').addEventListener('click', () => copyIP());
+      $('#serverIP').textContent = SERVER_IP;
+      $('#year').textContent = new Date().getFullYear();
+      
+      $$('.card').forEach(card=>{
+        card.addEventListener('pointermove', (e)=>{
+          const r = card.getBoundingClientRect();
+          card.style.setProperty('--mx', ((e.clientX - r.left)/r.width*100)+'%');
+        })
+      });
+      
+      if (window.gsap) {
+        gsap.from('header', { y: -40, opacity: 0, duration: .7, ease: 'power3.out' });
+        gsap.from('main > .container > *', { opacity: 0, y: 30, duration: 1, stagger: 0.1, ease: 'power3.out', delay: 0.2 });
+        
+        $$('section').forEach(section => {
+            gsap.from(section.querySelectorAll('h2, p, .card, .grid > *, .tab, #products > *'), {
+                opacity: 0, y: 40, duration: .8, stagger: .08, ease: 'power3.out',
+                scrollTrigger: { trigger: section, start: 'top 85%', toggleActions: 'play none none none' }
+            });
+        });
+      }
+    });
+
+    // --- TOAST NOTIFICATION ---
+    let toastTimer;
+    function showToast(msg) {
+      const t = $('#toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      gsap.fromTo(t, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3 });
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        gsap.to(t, { opacity: 0, y: 20, duration: 0.3, onComplete: () => t.style.display = 'none' });
+      }, 2500);
+    }
+    
+    function copyIP() {
+        navigator.clipboard.writeText(SERVER_IP).then(() => showToast(`IP copied: ${SERVER_IP}`));
+    }
+
+    // --- LIVE SERVER STATUS ---
+    async function fetchStatus() {
+        const statusBadge = $('#statusBadge'), playersEl = $('#players'), versionEl = $('#version');
+        function setLoading() {
+            statusBadge.innerHTML = `<span class="animate-spin inline-block size-2 rounded-full border-2 border-t-transparent border-yellow-400"></span> Checking...`;
+            statusBadge.className = 'badge-off !text-yellow-400 !bg-yellow-500/10 !border-yellow-500/20';
+        }
+        function setOffline() {
+            statusBadge.className = 'badge-off';
+            statusBadge.innerHTML = '<span class="inline-block size-2 rounded-full bg-red-500"></span> Offline';
+            playersEl.textContent = '—';
+            versionEl.textContent = '—';
+        }
+        setLoading();
+        try {
+            const res = await fetch(`https://api.mcstatus.io/v2/status/java/${SERVER_IP}`);
+            if (!res.ok) throw new Error('API request failed');
+            const data = await res.json();
+            if (data?.online) {
+                statusBadge.className = 'badge-live';
+                statusBadge.innerHTML = '<span class="inline-block size-2 rounded-full bg-emerald-400"></span> Online';
+                playersEl.textContent = `${data.players?.online || 0} / ${data.players?.max || 0}`;
+                versionEl.textContent = data.version?.name_clean || 'Latest';
+            } else { setOffline(); }
+        } catch (e) { console.error("Failed to fetch server status:", e); setOffline(); }
+    }
+    $('#refreshStatus').addEventListener('click', () => { fetchStatus().then(() => showToast('Status refreshed')); });
+    fetchStatus();
+
+    // --- STORE & CART LOGIC ---
+    const CATALOG = {
+      ranks: [
+        { sku: 'rank-vip', name: 'Vip Rank', price: 4.99, desc: 'Starter perks & color name.' },
+        { sku: 'rank-mvp', name: 'Mvp Rank', price: 9.99, desc: 'Queue priority & QoL commands.' },
+        { sku: 'rank-elite', name: 'Elite Rank', price: 19.99, desc: 'Weekly key & /nick.' },
+        { sku: 'rank-immortal', name: 'Immortal Rank', price: 29.99, desc: 'Fly & pets access.' },
+        { sku: 'rank-maceplus', name: 'Mace+ Rank', price: 49.99, desc: 'Maximum perks & cosmetics.' },
+      ],
+      keys: [
+        { sku: 'key-vote-5', name: 'Vote Keys x5', price: 3.99, desc: 'Five Vote crate keys.' },
+        { sku: 'key-myth-3', name: 'Mythical Keys x3', price: 7.99, desc: 'Three Mythical keys.' },
+        { sku: 'key-leg-1', name: 'Legendary Key', price: 6.99, desc: 'One Legendary key.' },
+      ],
+      bundles: [
+        { sku: 'bundle-starter', name: 'Starter Pack', price: 9.99, desc: 'Vip + Vote Keys x5.' },
+        { sku: 'bundle-pvp', name: 'PvP Pack', price: 14.99, desc: 'Mvp + 1 Legendary Key.' },
+        { sku: 'bundle-god', name: 'God Pack', price: 39.99, desc: 'Elite + Mythical Keys x3.' },
+      ]
+    };
+    let cart = JSON.parse(localStorage.getItem('macemcCart') || '{}');
+    let coupon = localStorage.getItem('macemcCoupon') || '';
+
+    function renderProducts(cat = 'ranks') {
+      const list = $('#products');
+      list.innerHTML = '';
+      CATALOG[cat].forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'card flex flex-col items-start';
+        el.innerHTML = `
+          <div class="flex-grow">
+            <h4 class="font-bold">${item.name}</h4>
+            <p class="text-sm text-gray-400 mt-1">${item.desc}</p>
+          </div>
+          <div class="flex items-center justify-between w-full mt-4">
+            <div class="font-bold text-lg">$${item.price.toFixed(2)}</div>
+            <button class="px-4 py-2 rounded-lg font-semibold bg-purple-600/50 hover:bg-purple-600/80 transition-colors text-sm" data-sku="${item.sku}" data-name="${item.name}" data-price="${item.price}">Add</button>
+          </div>`;
+        $('button', el).addEventListener('click', () => addToCart(item.sku, item.name, item.price, 1));
+        list.appendChild(el);
+      });
+    }
+
+    function switchTab(cat) {
+        $$('.tab').forEach(t => {
+            const isActive = t.dataset.cat === cat;
+            t.classList.toggle('active', isActive);
+            t.style.background = isActive ? 'linear-gradient(135deg, var(--accent-2), var(--accent-3))' : 'var(--glass)';
+        });
+        renderProducts(cat);
+    }
+
+    $$('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.cat)));
+    switchTab('ranks');
+
+    function saveCart() {
+      localStorage.setItem('macemcCart', JSON.stringify(cart));
+      localStorage.setItem('macemcCoupon', coupon || '');
+    }
+    function addToCart(sku, name, price, qty) {
+      cart[sku] = cart[sku] || { sku, name, price, qty: 0 };
+      cart[sku].qty += qty;
+      saveCart(); updateCartBadge(); showToast(`${name} added to cart`);
+    }
+    function updateCartBadge() {
+      $('#cartCount').textContent = Object.values(cart).reduce((n, i) => n + i.qty, 0);
+    }
+    function openCart() { $('#cartModal').style.display = 'flex'; renderCart(); $('#coupon').value = coupon; }
+    function closeCart() { $('#cartModal').style.display = 'none'; }
+    $('#openCart').addEventListener('click', openCart);
+    $('#closeCart').addEventListener('click', closeCart);
+    $('#clearCart').addEventListener('click', () => { cart = {}; coupon = ''; saveCart(); renderCart(); updateCartBadge(); });
+
+    function renderCart() {
+      const wrap = $('#cartItems');
+      wrap.innerHTML = '';
+      const items = Object.values(cart);
+      if (!items.length) {
+        wrap.innerHTML = '<div class="text-gray-400 text-center py-4">Your cart is empty.</div>';
+        updateTotals(); return;
+      }
+      for (const it of items) {
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-4 p-2 rounded-lg bg-white/5';
+        row.innerHTML = `
+          <div class="flex-grow">
+            <div class="font-semibold">${it.name}</div>
+            <div class="text-sm text-gray-400">$${it.price.toFixed(2)} each</div>
+          </div>
+          <div class="flex items-center gap-1 border border-white/10 rounded-md">
+            <button class="qty-btn w-7 h-7" data-action="dec">−</button>
+            <input value="${it.qty}" class="w-10 bg-transparent text-center font-bold" readonly>
+            <button class="qty-btn w-7 h-7" data-action="inc">+</button>
+          </div>
+          <div class="font-bold w-16 text-right">$${(it.qty * it.price).toFixed(2)}</div>
+          <button class="remove-btn p-1.5 rounded-md hover:bg-red-500/20 text-red-400" aria-label="Remove"><i class="ti ti-trash"></i></button>
+        `;
+        $$('.qty-btn', row).forEach(btn => btn.addEventListener('click', () => {
+            if (btn.dataset.action === 'inc') it.qty++; else it.qty = Math.max(1, it.qty - 1);
+            saveCart(); renderCart(); updateCartBadge();
+        }));
+        $('.remove-btn', row).addEventListener('click', () => { delete cart[it.sku]; saveCart(); renderCart(); updateCartBadge(); });
+        wrap.appendChild(row);
+      }
+      updateTotals();
+    }
+
+    function calcTotals() {
+      const subtotal = Object.values(cart).reduce((s, i) => s + i.qty * i.price, 0);
+      let discount = 0;
+      if (coupon && coupon.toUpperCase() === 'MACE10') discount = subtotal * 0.10;
+      const total = Math.max(0, subtotal - discount);
+      return { subtotal, discount, total };
+    }
+    function updateTotals() {
+      const { subtotal, discount, total } = calcTotals();
+      $('#totals').innerHTML = `
+        <div class="flex justify-between"><span>Subtotal:</span><strong>$${subtotal.toFixed(2)}</strong></div>
+        <div class="flex justify-between ${discount ? 'text-green-400' : 'text-gray-400'}"><span>Discount:</span><strong>-$${discount.toFixed(2)}</strong></div>
+        <div class="flex justify-between font-bold text-lg mt-2 pt-2 border-t border-white/10"><span>Total:</span><strong>$${total.toFixed(2)}</strong></div>
+      `;
+    }
+    $('#applyCoupon').addEventListener('click', () => {
+      coupon = $('#coupon').value.trim();
+      saveCart(); updateTotals();
+      showToast(coupon.toUpperCase() === 'MACE10' ? 'Coupon applied: 10% off' : 'Coupon code saved');
+    });
+    $$('.add-to-cart').forEach(btn => {
+      btn.addEventListener('click', () => addToCart(btn.dataset.sku, btn.dataset.name, parseFloat(btn.dataset.price), 1));
+    });
+    updateCartBadge();
+  </script>
+</body>
+</html>
